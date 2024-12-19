@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Movie Rating Predictor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .genre-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .genre-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .genre-item input[type="checkbox"] {
+            margin: 0;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 20px;
+            display: none;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .helper-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Movie Rating Predictor</h1>
+        
+        <div class="form-group">
+            <label for="budget">Movie Budget (USD):</label>
+            <input type="number" id="budget" min="0" step="1000000" value="10000000">
+            <div class="helper-text">Typical range: $1M - $200M</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="popularity">Popularity Score:</label>
+            <input type="number" id="popularity" min="0" max="100" step="0.1" value="50">
+            <div class="helper-text">0-100 scale, higher means more popular</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="runtime">Runtime (minutes):</label>
+            <input type="number" id="runtime" min="0" step="1" value="120">
+            <div class="helper-text">Typical range: 80-180 minutes</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="vote_count">Number of Votes:</label>
+            <input type="number" id="vote_count" min="0" step="1" value="1000">
+            <div class="helper-text">Minimum: 10 votes</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="release_year">Release Year:</label>
+            <input type="number" id="release_year" min="1900" max="2024" step="1" value="2023">
+        </div>
+        
+        <div class="form-group">
+            <label>Movie Genres:</label>
+            <div class="genre-grid">
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Action" value="Action">
+                    <label for="genre_Action">Action</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Adventure" value="Adventure">
+                    <label for="genre_Adventure">Adventure</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Animation" value="Animation">
+                    <label for="genre_Animation">Animation</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Comedy" value="Comedy">
+                    <label for="genre_Comedy">Comedy</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Crime" value="Crime">
+                    <label for="genre_Crime">Crime</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Documentary" value="Documentary">
+                    <label for="genre_Documentary">Documentary</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Drama" value="Drama">
+                    <label for="genre_Drama">Drama</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Family" value="Family">
+                    <label for="genre_Family">Family</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Fantasy" value="Fantasy">
+                    <label for="genre_Fantasy">Fantasy</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_History" value="History">
+                    <label for="genre_History">History</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Horror" value="Horror">
+                    <label for="genre_Horror">Horror</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Music" value="Music">
+                    <label for="genre_Music">Music</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Mystery" value="Mystery">
+                    <label for="genre_Mystery">Mystery</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Romance" value="Romance">
+                    <label for="genre_Romance">Romance</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Science Fiction" value="Science Fiction">
+                    <label for="genre_Science Fiction">Science Fiction</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Thriller" value="Thriller">
+                    <label for="genre_Thriller">Thriller</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_War" value="War">
+                    <label for="genre_War">War</label>
+                </div>
+                <div class="genre-item">
+                    <input type="checkbox" id="genre_Western" value="Western">
+                    <label for="genre_Western">Western</label>
+                </div>
+            </div>
+        </div>
+        
+        <button onclick="predictRating()">Predict Rating</button>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        function predictRating() {
+            // Get selected genres
+            const genres = [];
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+                genres.push(checkbox.value);
+            });
+            
+            const data = {
+                budget: document.getElementById('budget').value,
+                popularity: document.getElementById('popularity').value,
+                runtime: document.getElementById('runtime').value,
+                vote_count: document.getElementById('vote_count').value,
+                release_year: document.getElementById('release_year').value,
+                genres: genres
+            };
+            
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `Predicted Rating: ${data.prediction}/10`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `Error: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `Error: ${error.message}`;
+            });
+        }
+    </script>
+</body>
+</html> 
