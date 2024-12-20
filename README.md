@@ -45,18 +45,31 @@ This project implements a machine learning model to predict movie ratings based 
    - Language classification (English vs Non-English)
 
 ### Model Implementation
-- Primary Model: Gradient Boosting Regressor
-- Ensemble Components:
-  - Random Forest Regressor
-  - XGBoost Regressor
+- Ensemble Architecture using scikit-learn Pipeline:
+  - XGBoost (Best Individual Model)
+  - Random Forest
+  - Gradient Boosting
   - Ridge Regression
   - Lasso Regression
-  - Support Vector Regression (SVR)
+- Each model includes integrated StandardScaler
+- Final Stacking Ensemble with Lasso meta-learner
 
 ### Model Performance
-- Cross-validation R² scores around 0.5-0.6
-- Test set performance showing similar metrics
-- Consistent prediction patterns in the 6-7 range
+Latest Training Results (5-fold cross-validation):
+- XGBoost: R² = 0.5483 (±0.0191)
+- Gradient Boosting: R² = 0.5251 (±0.0258)
+- Ridge: R² = 0.4522 (±0.0196)
+- Lasso: R² = 0.4528 (±0.0178)
+
+Final Stacking Ensemble:
+- Test Set R² = 0.5831
+- Best performing model overall
+- Improved performance through model combination
+
+Key Insights:
+- XGBoost shows strongest individual performance
+- Stacking ensemble provides ~3.5% improvement over best individual model
+- Consistent prediction patterns across different model architectures
 
 ## Project Structure
 ```

@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import StackingRegressor, RandomForestRegressor, GradientBoostingRegressor
 from sklearn.linear_model import LassoCV, RidgeCV
+from sklearn.pipeline import Pipeline
 from xgboost import XGBRegressor
 from sklearn.svm import SVR
 import pickle
@@ -127,47 +128,52 @@ def train_model():
         X, y, test_size=0.2, random_state=42
     )
     
-    # Scale the features
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-    
     # Define models to try
-    models = {
-        'Random Forest': RandomForestRegressor(
-            n_estimators=200,
-            max_depth=10,
-            min_samples_split=5,
-            random_state=42
-        ),
-        'XGBoost': XGBRegressor(
-            n_estimators=200,
-            learning_rate=0.05,
-            max_depth=6,
-            min_child_weight=2,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            random_state=42
-        ),
-        'Gradient Boosting': GradientBoostingRegressor(
-            n_estimators=200,
-            learning_rate=0.05,
-            max_depth=6,
-            random_state=42
-        ),
-        'Ridge': RidgeCV(
-            alphas=[0.01, 0.1, 1.0, 10.0],
-            cv=5
-        ),
-        'Lasso': LassoCV(
-            cv=5,
-            random_state=42
-        ),
-        'SVR': SVR(
-            kernel='rbf',
-            C=1.0,
-            epsilon=0.1
-        )
+    base_models = {
+        'Random Forest': Pipeline([
+            ('scaler', StandardScaler()),
+            ('regressor', RandomForestRegressor(
+                n_estimators=200,
+                max_depth=10,
+                min_samples_split=5,
+                random_state=42
+            ))
+        ]),
+        'XGBoost': Pipeline([
+            ('scaler', StandardScaler()),
+            ('regressor', XGBRegressor(
+                n_estimators=200,
+                learning_rate=0.05,
+                max_depth=6,
+                min_child_weight=2,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                random_state=42
+            ))
+        ]),
+        'Gradient Boosting': Pipeline([
+            ('scaler', StandardScaler()),
+            ('regressor', GradientBoostingRegressor(
+                n_estimators=200,
+                learning_rate=0.05,
+                max_depth=6,
+                random_state=42
+            ))
+        ]),
+        'Ridge': Pipeline([
+            ('scaler', StandardScaler()),
+            ('regressor', RidgeCV(
+                alphas=[0.01, 0.1, 1.0, 10.0],
+                cv=5
+            ))
+        ]),
+        'Lasso': Pipeline([
+            ('scaler', StandardScaler()),
+            ('regressor', LassoCV(
+                cv=5,
+                random_state=42
+            ))
+        ])
     }
     
     # Compare models using cross-validation
@@ -177,9 +183,9 @@ def train_model():
     best_model_name = None
     cv_results = {}
     
-    for name, model in models.items():
+    for name, model in base_models.items():
         scores = cross_val_score(
-            model, X_train_scaled, y_train,
+            model, X_train, y_train,  # Note: No need to scale manually
             cv=5, scoring='r2'
         )
         mean_score = scores.mean()
@@ -197,83 +203,44 @@ def train_model():
     print("-" * 60)
     print(f"Best model: {best_model_name} (R² = {best_score:.4f})")
     
-    # Create and train the stacking ensemble
-    base_models = [
+    # Create stacking ensemble with built-in scaling
+    estimators = [
         (name.lower().replace(' ', '_'), model)
-        for name, model in models.items()
-        if name != 'SVR'  # Exclude SVR as it's slow for large datasets
+        for name, model in base_models.items()
     ]
     
-    # Create stacking model
-    stacking_model = StackingRegressor(
-        estimators=base_models,
-        final_estimator=LassoCV(cv=5),
+    final_model = StackingRegressor(
+        estimators=estimators,
+        final_estimator=Pipeline([
+            ('scaler', StandardScaler()),
+            ('regressor', LassoCV(cv=5))
+        ]),
         cv=5,
         n_jobs=-1
     )
     
     # Train the stacking model
     print("\nTraining stacking ensemble...")
-    stacking_model.fit(X_train_scaled, y_train)
+    final_model.fit(X_train, y_train)
     
-    # Evaluate all models on test set
-    print("\nTest set performance:")
-    print("-" * 60)
+    # Evaluate on test set
+    test_score = final_model.score(X_test, y_test)
+    print(f"\nFinal model test set R² = {test_score:.4f}")
     
-    # Train and evaluate individual models
-    test_results = {}
-    for name, model in models.items():
-        model.fit(X_train_scaled, y_train)
-        test_score = model.score(X_test_scaled, y_test)
-        test_results[name] = test_score
-        print(f"{name:20s}: R² = {test_score:.4f}")
-    
-    # Evaluate stacking model
-    stacking_score = stacking_model.score(X_test_scaled, y_test)
-    test_results['Stacking Ensemble'] = stacking_score
-    print(f"{'Stacking Ensemble':20s}: R² = {stacking_score:.4f}")
-    
-    # Find best model on test set
-    best_test_model = max(test_results.items(), key=lambda x: x[1])
-    print("-" * 60)
-    print(f"Best model on test set: {best_test_model[0]} (R² = {best_test_model[1]:.4f})")
-    
-    # Use the best performing model
-    if best_test_model[0] == 'Stacking Ensemble':
-        final_model = stacking_model
-    else:
-        final_model = models[best_test_model[0]]
-        final_model.fit(X_train_scaled, y_train)
-    
-    # Feature importance (if available)
-    if hasattr(final_model, 'feature_importances_'):
-        feature_importance = pd.DataFrame({
-            'feature': features,
-            'importance': final_model.feature_importances_
-        })
-        feature_importance = feature_importance.sort_values('importance', ascending=False)
-        print("\nTop 10 most important features:")
-        print(feature_importance.head(10))
-    
-    # Create models directory if it doesn't exist
+    # Save the model and feature names
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_dir = os.path.dirname(script_dir)
     models_dir = os.path.join(project_dir, 'models')
     os.makedirs(models_dir, exist_ok=True)
     
-    # Save the model and scaler
-    print("\nSaving model and scaler...")
     with open(os.path.join(models_dir, 'movie_rating_model.pkl'), 'wb') as f:
         pickle.dump(final_model, f)
     
-    with open(os.path.join(models_dir, 'scaler.pkl'), 'wb') as f:
-        pickle.dump(scaler, f)
-    
-    # Save feature names for the Flask app
     with open(os.path.join(models_dir, 'feature_names.json'), 'w') as f:
         json.dump(features, f)
     
-    print("Training completed!")
+    print("\nModel and feature names saved successfully!")
+    return final_model, features
 
 if __name__ == '__main__':
     train_model() 

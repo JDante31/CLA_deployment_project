@@ -12,15 +12,13 @@ models_dir = os.path.join(project_dir, 'models')
 
 app = Flask(__name__, template_folder=os.path.join(project_dir, 'templates'))
 
-# Load the model and scaler
+# Load the model and feature names
 try:
     with open(os.path.join(models_dir, 'movie_rating_model.pkl'), 'rb') as f:
         model = pickle.load(f)
-    with open(os.path.join(models_dir, 'scaler.pkl'), 'rb') as f:
-        scaler = pickle.load(f)
     with open(os.path.join(models_dir, 'feature_names.json'), 'r') as f:
         feature_names = json.load(f)
-    print("Model and scaler loaded successfully!")
+    print("Model loaded successfully!")
     print(f"Using {len(feature_names)} features")
 except Exception as e:
     print(f"Error loading model: {str(e)}")
@@ -81,11 +79,8 @@ def predict():
         for i, feature_name in enumerate(feature_names):
             features[i] = feature_map.get(feature_name, 0.0)
         
-        # Reshape and scale features
-        features_scaled = scaler.transform(features.reshape(1, -1))
-        
-        # Make prediction and convert to Python float
-        prediction = float(model.predict(features_scaled)[0])
+        # Make prediction (scaling is now handled by the pipeline)
+        prediction = float(model.predict(features.reshape(1, -1))[0])
         
         # Round to 1 decimal place
         prediction = round(prediction, 1)
